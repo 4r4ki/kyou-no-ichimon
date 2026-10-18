@@ -258,51 +258,69 @@ function magic(n) {
 // ---------------------------------------------------------------------------
 // 6. 数列
 // ---------------------------------------------------------------------------
+// 並びに当てはまる素直な規則（差が一定・前の数から決まる・1つおき）が、それぞれ予想する次の数
+function simpleNexts(s) {
+  const out = [], diff = a => a.slice(1).map((x, i) => x - a[i]);
+  for (let k = 1, lv = [s]; k <= 3; k++) {
+    lv.push(diff(lv[k - 1]));
+    if (lv[k].length >= 2 && lv[k].every(x => x === lv[k][0])) { out.push(lv.reduce((t, l) => t + l[l.length - 1], 0)); break; }
+  }
+  const n = s.length;
+  if (s.slice(2).every((x, i) => x === s[i] + s[i + 1])) out.push(s[n - 2] + s[n - 1]);
+  if (s.slice(3).every((x, i) => x === s[i] + s[i + 1] + s[i + 2])) out.push(s[n - 3] + s[n - 2] + s[n - 1]);
+  for (let m = -5; m <= 5; m++) { const c = s[1] - m * s[0]; if (s.slice(1).every((x, i) => x === m * s[i] + c)) out.push(m * s[n - 1] + c); }
+  const ev = s.filter((_, i) => i % 2 === 0), od = s.filter((_, i) => i % 2), ar = a => a.length >= 3 && diff(a).every(x => x === a[1] - a[0]);
+  if (ar(ev) && ar(od)) { const t = n % 2 ? od : ev; out.push(t[t.length - 1] + t[1] - t[0]); }
+  return out;
+}
 function sequences(n) {
+  // どの並びも、出題に使うより1つ多く作っておく（ほかの規則でも説明がつくとき、1つ多く見せるため）
   const fams = [
     () => { // 階差が等差
-      const a = ri(1, 20), d = ri(1, 6), k = ri(1, 4); const s = [a]; for (let i = 0; i < 6; i++) s.push(s[i] + d + k * i);
+      const a = ri(1, 20), d = ri(1, 6), k = ri(1, 4); const s = [a]; for (let i = 0; i < 7; i++) s.push(s[i] + d + k * i);
       return { s, level: 3, rule: `となりとの差が ${d}, ${d + k}, ${d + 2 * k}, … と ${k} ずつ増えています。`, hint: 'となり合う数の差を書き出してみよう。' };
     },
     () => { // フィボナッチ型
-      const a = ri(1, 9), b = ri(a, 15); const s = [a, b]; for (let i = 0; i < 5; i++) s.push(s[i] + s[i + 1]);
+      const a = ri(1, 9), b = ri(a, 15); const s = [a, b]; for (let i = 0; i < 6; i++) s.push(s[i] + s[i + 1]);
       return { s, level: 3, rule: '前の2つの数を足すと次の数になります。', hint: '差ではなく、となり合う2つの数の関係を見よう。' };
     },
     () => { // ×m +c
-      const m = ri(2, 3), c = pick([-3, -2, -1, 1, 2, 3]), a = ri(1, 6); const s = [a]; for (let i = 0; i < 6; i++) s.push(s[i] * m + c);
-      if (s.some(v => v <= 0)) return null;
+      const m = ri(2, 3), c = pick([-3, -2, -1, 1, 2, 3]), a = ri(1, 6); const s = [a]; for (let i = 0; i < 7; i++) s.push(s[i] * m + c);
+      if (s.slice(0, -1).some(v => v <= 0)) return null;
       return { s, level: 3, rule: `前の数を ${m} 倍して ${c > 0 ? c + ' を足す' : -c + ' を引く'}と次の数になります。`, hint: `差がだいたい ${m} 倍ずつになっている。` };
     },
     () => { // +a, ×b を交互
-      const p = ri(1, 5), m = ri(2, 3), a = ri(1, 5); const s = [a]; for (let i = 0; i < 6; i++) s.push(i % 2 ? s[i] * m : s[i] + p);
+      const p = ri(1, 5), m = ri(2, 3), a = ri(1, 5); const s = [a]; for (let i = 0; i < 7; i++) s.push(i % 2 ? s[i] * m : s[i] + p);
       return { s, level: 4, rule: `「${p} を足す」「${m} 倍する」を交互にくり返しています。`, hint: '2種類の操作が交互に行われている。' };
     },
     () => { // n² + c
-      const st = ri(1, 6), c = ri(-5, 9); const s = []; for (let i = 0; i < 7; i++) s.push((st + i) ** 2 + c);
+      const st = ri(1, 6), c = ri(-5, 9); const s = []; for (let i = 0; i < 8; i++) s.push((st + i) ** 2 + c);
       if (s[0] <= 0 || c === 0) return null;
       return { s, level: 4, rule: `${st}², ${st + 1}², ${st + 2}², … に ${c > 0 ? c + ' を足した' : -c + ' を引いた'}数です。`, hint: '差は 3, 5, 7, … のような奇数の並び。何かの2乗に近い数では？' };
     },
     () => { // 2つの数列が交互
-      const a = ri(1, 20), d = ri(2, 7), b = ri(20, 60), e = -ri(1, 5); const s = []; for (let i = 0; i < 4; i++) { s.push(a + d * i); s.push(b + e * i); }
-      return { s: s.slice(0, 8), level: 4, rule: `1つおきに見ると、${a}, ${a + d}, … は ${d} ずつ増え、${b}, ${b + e}, … は ${-e} ずつ減っています。`, hint: '1つおきに見てみよう。' };
+      const a = ri(1, 20), d = ri(2, 7), b = ri(20, 60), e = -ri(1, 5); const s = []; for (let i = 0; i < 5; i++) { s.push(a + d * i); s.push(b + e * i); }
+      return { s: s.slice(0, 9), level: 4, rule: `1つおきに見ると、${a}, ${a + d}, … は ${d} ずつ増え、${b}, ${b + e}, … は ${-e} ずつ減っています。`, hint: '1つおきに見てみよう。' };
     },
     () => { // トリボナッチ
-      const a = ri(1, 3), b = ri(1, 4), c = ri(2, 6); const s = [a, b, c]; for (let i = 0; i < 4; i++) s.push(s[i] + s[i + 1] + s[i + 2]);
+      const a = ri(1, 3), b = ri(1, 4), c = ri(2, 6); const s = [a, b, c]; for (let i = 0; i < 5; i++) s.push(s[i] + s[i + 1] + s[i + 2]);
       return { s, level: 4, rule: '前の3つの数を足すと次の数になります。', hint: '前の2つではなく…' };
     },
     () => { // n³ ± c
-      const st = ri(1, 4), c = ri(-3, 3); const s = []; for (let i = 0; i < 6; i++) s.push((st + i) ** 3 + c);
+      const st = ri(1, 4), c = ri(-3, 3); const s = []; for (let i = 0; i < 7; i++) s.push((st + i) ** 3 + c);
       if (s[0] <= 0) return null;
       return { s, level: 4, rule: `${st}³, ${st + 1}³, … ${c ? `に ${c > 0 ? c + ' を足した' : -c + ' を引いた'}` : 'そのもの'}です。`, hint: 'どんどん大きくなる。何かの3乗に近い数では？' };
     },
     () => { // 差が倍々
-      const a = ri(1, 10), d = ri(1, 3), m = ri(2, 3); const s = [a]; let x = d; for (let i = 0; i < 6; i++) { s.push(s[i] + x); x *= m; }
+      const a = ri(1, 10), d = ri(1, 3), m = ri(2, 3); const s = [a]; let x = d; for (let i = 0; i < 7; i++) { s.push(s[i] + x); x *= m; }
       return { s, level: 3, rule: `差が ${d}, ${d * m}, ${d * m * m}, … と ${m} 倍ずつになっています。`, hint: 'となり合う数の差を書き出してみよう。' };
     },
   ];
   return loop(n, 3000, () => {
-    const r = pick(fams)(); if (!r || r.s.some(v => Math.abs(v) > 99999)) return false;
-    const shown = r.s.slice(0, -1), ans = r.s[r.s.length - 1];
+    const r = pick(fams)(); if (!r || r.s.slice(0, -1).some(v => Math.abs(v) > 99999)) return false;
+    let shown = r.s.slice(0, -2), ans = r.s[r.s.length - 2];
+    if (simpleNexts(shown).some(v => v !== ans)) { shown = r.s.slice(0, -1); ans = r.s[r.s.length - 1]; }
+    if (simpleNexts(shown).some(v => v !== ans)) return false;
     return add('seq', shown.join('.'), {
       genre: 'math', level: r.level, title: '次に来る数は？',
       q: `<p class="big">${shown.join(', ')}, ?</p><p>ある規則で数が並んでいます。「?」に入る数は？</p>`,
@@ -419,13 +437,13 @@ function clockAngle(n) {
 }
 function clockEvents() {
   let made = 0;
-  const kinds = [['重なる', [0]], ['一直線になる（反対向きにぴったり重なる）', [180]], ['直角になる', [90, 270]]];
+  const kinds = [['重なる', [0]], ['一直線になる（反対向きにまっすぐ並ぶ）', [180]], ['直角になる', [90, 270]]];
   for (let h = 1; h <= 11; h++) for (const [name, angles] of kinds) {
     // 5.5m − 30h ≡ angle (mod 360) となる最初の 0 < m < 60
-    let best = null;
+    let best = null, gain = 0; // gain：長針が短針より多く進む角度
     for (const ang of angles) for (let k = -2; k <= 3; k++) {
       const num = 2 * (30 * h + ang + 360 * k); const f = fr(num, 11); const v = f.n / f.d;
-      if (v > 0 && v < 60 && (!best || v < best.n / best.d)) best = f;
+      if (v > 0 && v < 60 && (!best || v < best.n / best.d)) { best = f; gain = 30 * h + ang + 360 * k; }
     }
     if (!best) continue;
     const ans = `${h}時${mixed(best)}分`;
@@ -438,7 +456,7 @@ function clockEvents() {
       q: `<p>時計がちょうど <b>${h}時</b> を指しています。</p><p>このあと、長針と短針が初めて <b>${name}</b> のは何時何分？</p>`,
       type: 'choice', choices: order, answer: order.indexOf(ans),
       hints: ['長針は1分で6度、短針は1分で0.5度。長針は1分ごとに 5.5度ずつ短針に近づく（追いこす）。', `${h}時ちょうどのとき、長針は短針の ${30 * h}度うしろにいる。`],
-      explain: `<p>${h}時ちょうど、長針は短針より ${30 * h}度うしろ。長針は1分に5.5度ずつ追いつきます。</p><p>必要な差を 5.5 でわると ${mixed(best)}分。答えは <b>${ans}</b>。</p><p>分が11分の1きざみになるのが、この種類の問題の特徴です。</p>`,
+      explain: `<p>${h}時ちょうど、長針は短針より ${30 * h}度うしろ。長針は1分に5.5度ずつ追いつきます。</p><p>初めて${name.replace(/（.*）/, '')}のは、長針が短針より ${gain}度 多く進んだとき。${gain} ÷ 5.5 = ${mixed(best)}分なので、答えは <b>${ans}</b>。</p><p>分が11分の1きざみになるのが、この種類の問題の特徴です。</p>`,
     })) made++;
   }
   return made;

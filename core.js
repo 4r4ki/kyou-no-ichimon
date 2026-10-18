@@ -118,7 +118,8 @@ function problemById(id, d) {
 // 答え合わせ
 // ---------------------------------------------------------------------------
 function norm(s) {
-  return String(s).normalize('NFKC').trim().toLowerCase().replace(/[\s,、]/g, '').replace(/(円|個|回転|回|日目|日|度|歳|通り|本|年|マス|分|秒|か月|月|ページ|種類|ピース|組|匹|人|番|面|色|試合|時間|か所|枚|段|手|km|m2|g|m|%)$/, '');
+  // 最後の単位は外す。ただし「回」「手」のように単位の字だけの答えは残す
+  return String(s).normalize('NFKC').trim().toLowerCase().replace(/[\s,、]/g, '').replace(/^(.+?)(円|個|回転|回|日目|日|度|歳|通り|本|年|マス|分|秒|か月|月|ページ|種類|ピース|組|匹|人|番|面|色|試合|時間|か所|枚|段|手|km|m2|g|m|%)$/, '$1');
 }
 function toNum(s) {
   const t = norm(s);
